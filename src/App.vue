@@ -1,9 +1,19 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
+import PhoneForm from "./components/PhoneForm.vue";
+import IframeStep from "./components/IframeStep.vue";
 
-const apiResponse = ref("Cargando respuesta de Truora...");
+const step = ref<"phone" | "iframe">("phone");
 const token = ref("");
+
+const iframeUrl = computed(
+  () => (token.value ? `https://identity.truora.com/?token=${token.value}` : "")
+);
+
+const onPhoneSubmit = () => {
+  step.value = "iframe";
+};
 
 const getApiKey = async () => {
   try {
@@ -47,7 +57,6 @@ const getApiKey = async () => {
     }
 
     const data = await response.json();
-    apiResponse.value = data;
     token.value = data.api_key;
   } catch (error) {
     console.error("🚨 Error capturado:", error);
@@ -74,15 +83,11 @@ onMounted(() => {
     </section>
 
     <section class="main-container">
-      <div class="iframe-placeholder">
-        <iframe
-          v-if="token"
-          :src="`https://identity.truora.com/?token=${token}`"
-          allow="camera"
-          width="450"
-          height="700"
-        >
-        </iframe>
+      <div class="flow-container">
+        <transition name="fade" mode="out-in">
+          <PhoneForm v-if="step === 'phone'" @submit="onPhoneSubmit" />
+          <IframeStep v-else-if="step === 'iframe'" :iframe-url="iframeUrl" />
+        </transition>
       </div>
     </section>
 
@@ -155,9 +160,9 @@ onMounted(() => {
   width: 100%;
 }
 
-.iframe-placeholder {
-  width: 500;
-  height: 750;
+.flow-container {
+  width: 400px;
+  height: 750px;
   background: rgba(255, 255, 255, 0.8);
   border: 2px solid rgba(46, 125, 50, 0.1);
   border-radius: 24px;
@@ -166,6 +171,17 @@ onMounted(() => {
   justify-content: center;
   box-shadow: 0 8px 32px rgba(26, 58, 46, 0.08);
   backdrop-filter: blur(10px);
+  overflow: auto;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 .placeholder-text {
@@ -230,8 +246,11 @@ onMounted(() => {
     text-align: center;
   }
 
-  .iframe-placeholder {
+  .flow-container {
+    width: 100%;
+    max-width: 400px;
     height: 50vh;
+    min-height: 500px;
   }
 
   .placeholder-text {
