@@ -13,7 +13,6 @@ const errorMessage = ref("");
 // Cambiar luego por variables de entorno
 const SUPABASE_URL =
   "https://gclglssgpdsslkucbaoj.supabase.co/rest/v1/users?id=";
-const SUPABASE_ANON_KEY = "";
 
 const countryCodes = [
   { code: "+1", name: "USA/Canadá" },
