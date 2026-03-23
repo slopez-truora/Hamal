@@ -4,11 +4,11 @@ import SavingsForm from "./components/SavingsForm.vue";
 import PhoneForm from "./components/PhoneForm.vue";
 import IframeStep from "./components/IframeStep.vue";
 
-const step = ref<"phone" | "iframe">("phone");
+const step = ref<"phone" | "iframe">("iframe");
 const token = ref("");
 
-const iframeUrl = computed(
-  () => (token.value ? `https://identity.truora.com/?token=${token.value}` : "")
+const iframeUrl = computed(() =>
+  token.value ? `https://identity.truora.com/?token=${token.value}` : "",
 );
 
 const onPhoneSubmit = () => {
@@ -24,8 +24,9 @@ const getApiKey = async () => {
     formData.append("country", "ALL");
     formData.append("grant", "digital-identity");
     formData.append("redirect_url", "https://hamal-rvx2.onrender.com/");
-    formData.append("flow_id", import.meta.env.VITE_FLOW_ID || "");
+    formData.append("flow_id", "IPFfd125057a738611c514d6480fdde52c7");
     formData.append("account_id", "3012351819");
+    formData.append("phone", "+573012351819");
 
     const response = await fetch("https://api.account.truora.com/v1/api-keys", {
       method: "POST",
