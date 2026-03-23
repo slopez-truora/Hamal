@@ -1,73 +1,72 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
 const emit = defineEmits<{
-  submit: [phone: string, countryCode: string]
-}>()
+  submit: [phone: string, countryCode: string];
+}>();
 
-const countryCode = ref('+57')
-const phoneNumber = ref('')
-const loading = ref(false)
-const errorMessage = ref('')
+const countryCode = ref("+57");
+const phoneNumber = ref("");
+const loading = ref(false);
+const errorMessage = ref("");
 
 // Cambiar luego por variables de entorno
-const SUPABASE_URL = 'https://gclglssgpdsslkucbaoj.supabase.co'
-const SUPABASE_ANON_KEY = ''
+const SUPABASE_URL =
+  "https://gclglssgpdsslkucbaoj.supabase.co/rest/v1/users?id=";
+const SUPABASE_ANON_KEY = "";
 
 const countryCodes = [
-  { code: '+1', name: 'USA/Canadá' },
-  { code: '+52', name: 'México' },
-  { code: '+34', name: 'España' },
-  { code: '+54', name: 'Argentina' },
-  { code: '+56', name: 'Chile' },
-  { code: '+57', name: 'Colombia' },
-  { code: '+51', name: 'Perú' },
-]
+  { code: "+1", name: "USA/Canadá" },
+  { code: "+52", name: "México" },
+  { code: "+34", name: "España" },
+  { code: "+54", name: "Argentina" },
+  { code: "+56", name: "Chile" },
+  { code: "+57", name: "Colombia" },
+  { code: "+51", name: "Perú" },
+];
 
 const handleSubmit = async () => {
   if (!phoneNumber.value.trim()) {
-    errorMessage.value = 'Por favor ingresa tu número de WhatsApp'
-    return
+    errorMessage.value = "Por favor ingresa tu número de WhatsApp";
+    return;
   }
 
-  loading.value = true
-  errorMessage.value = ''
+  loading.value = true;
+  errorMessage.value = "";
 
-  const fullPhone = `${countryCode.value.replace('+', '')}${phoneNumber.value.replace(/\D/g, '')}`
+  const fullPhone = `${countryCode.value.replace("+", "")}${phoneNumber.value.replace(/\D/g, "")}`;
+  console.log(fullPhone);
 
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/users?phone=eq.${fullPhone}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-      }
-    )
+    const response = await fetch(`${SUPABASE_URL}eq.${fullPhone}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: "sb_publishable__rZDXVWHsnGHu8qwcGW8DA_COzc8ANK",
+        Authorization: "Bearer sb_publishable__rZDXVWHsnGHu8qwcGW8DA_COzc8ANK",
+      },
+    });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}`)
+      throw new Error(`Error ${response.status}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
 
     if (data && data.length > 0) {
-      errorMessage.value = 'Este número ya se encuentra registrado'
-      loading.value = false
-      return
+      errorMessage.value = "Este número ya se encuentra registrado";
+      loading.value = false;
+      return;
     }
 
-    emit('submit', fullPhone, countryCode.value)
+    emit("submit", fullPhone, countryCode.value);
   } catch (error) {
-    console.error('Error validando usuario:', error)
-    errorMessage.value = 'Hubo un error al validar. Intenta nuevamente.'
+    console.error("Error validando usuario:", error);
+    errorMessage.value = "Hubo un error al validar. Intenta nuevamente.";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <template>
@@ -80,7 +79,11 @@ const handleSubmit = async () => {
           class="country-code-select"
           :disabled="loading"
         >
-          <option v-for="country in countryCodes" :key="country.code" :value="country.code">
+          <option
+            v-for="country in countryCodes"
+            :key="country.code"
+            :value="country.code"
+          >
             {{ country.code }}
           </option>
         </select>
@@ -249,7 +252,9 @@ const handleSubmit = async () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-message {
