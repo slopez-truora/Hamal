@@ -238,21 +238,6 @@ onUnmounted(() => {
         </div>
       </Transition>
     </Teleport>
-
-    <section class="savings-section">
-      <div class="savings-content">
-        <div class="savings-info">
-          <h2 class="section-title">Comienza tu Ahorro</h2>
-          <p class="section-description">
-            Si ya estas registrado, Al ingresar tu número de WhatsApp podrás
-            iniciar sesión en nuestro flujo automatizado y realizar tu pago para
-            el ahorro programado de manera rápida y segura.
-          </p>
-        </div>
-
-        <SavingsForm />
-      </div>
-    </section>
   </div>
 </template>
 
