@@ -1,18 +1,71 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
+import RegistrationForm from "./components/RegistrationForm.vue";
 
 const token = ref("");
 const truoraStatus = ref<"idle" | "processing" | "success" | "failed">("idle");
 const popupVisible = ref(false);
 const popupMessage = ref("");
+const phone = ref("");
+const savedFullPhone = ref("");
+const savedPassword = ref("");
+
+const pendingToken = ref(false);
+
+const onRegistrationValidated = async (payload: {
+  fullPhone: string;
+  password: string;
+}) => {
+  savedFullPhone.value = payload.fullPhone;
+  savedPassword.value = payload.password;
+  pendingToken.value = true;
+  try {
+    await getApiKey(payload.fullPhone);
+    truoraStatus.value = "processing";
+  } catch (e) {
+    showPopup("No se pudo iniciar la validación. Intenta de nuevo.");
+  } finally {
+    pendingToken.value = false;
+  }
+};
+
+const onRegistrationAccountExists = () => {
+  showPopup("Ya existe una cuenta verificada con ese número de teléfono.");
+};
+
+const postUserToSupabase = async () => {
+  const base = import.meta.env.VITE_URL_SUPABASE || "";
+  const response = await fetch(`${base}users`, {
+    method: "POST",
+    headers: {
+      apikey: `${import.meta.env.VITE_APIKEY_SUPABASE}`,
+      Authorization: `Bearer ${import.meta.env.VITE_APIKEY_SUPABASE}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id: savedFullPhone.value,
+      password: savedPassword.value,
+    }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error(
+      "Error al guardar usuario en Supabase:",
+      response.status,
+      text,
+    );
+    throw new Error("No se pudo guardar el registro");
+  }
+};
 
 const showPopup = (message: string) => {
   popupMessage.value = message;
   popupVisible.value = true;
   setTimeout(() => {
     popupVisible.value = false;
-  }, 4000);
+  }, 8000);
 };
 
 const closePopup = () => {
@@ -29,7 +82,15 @@ const handleMessage = (event: MessageEvent) => {
   console.log("[postMessage] event.data:", data, "| tipo:", typeof data);
 
   if (message === "truora.process.succeeded") {
-    truoraStatus.value = "success";
+    void postUserToSupabase()
+      .then(() => {
+        truoraStatus.value = "success";
+      })
+      .catch(() => {
+        showPopup(
+          "La validación fue correcta pero no se pudo guardar el registro. Contacta soporte.",
+        );
+      });
   }
   if (message === "truora.process.failed") {
     truoraStatus.value = "failed";
@@ -42,57 +103,56 @@ const handleMessage = (event: MessageEvent) => {
   }
 };
 
-const getApiKey = async () => {
-  try {
-    const formData = new URLSearchParams();
+const getApiKey = async (fullPhone: string) => {
+  const formData = new URLSearchParams();
 
-    formData.append("key_type", "web");
-    formData.append("api_key_version", "1");
-    formData.append("country", "ALL");
-    formData.append("grant", "digital-identity");
-    formData.append("redirect_url", "https://hamal-rvx2.onrender.com/");
-    formData.append("flow_id", "IPFfd125057a738611c514d6480fdde52c7");
-    formData.append("account_id", "3012351819");
-    formData.append("phone", "+573012351819");
+  const phoneWithoutPlus = fullPhone.startsWith("+")
+    ? fullPhone.slice(1)
+    : fullPhone;
+  formData.append("key_type", "web");
+  formData.append("api_key_version", "1");
+  formData.append("country", "ALL");
+  formData.append("grant", "digital-identity");
+  formData.append("redirect_url", "https://hamal-rvx2.onrender.com/");
+  formData.append(
+    "flow_id",
+    import.meta.env.VITE_FLOW_ID || "IPFfd125057a738611c514d6480fdde52c7",
+  );
+  formData.append("account_id", phoneWithoutPlus);
+  formData.append("phone", phoneWithoutPlus);
 
-    const response = await fetch("https://api.account.truora.com/v1/api-keys", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Truora-API-Key": import.meta.env.VITE_TRUORA_API_KEY || "",
-      },
-      body: formData.toString(),
-    });
+  const response = await fetch("https://api.account.truora.com/v1/api-keys", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "Truora-API-Key": import.meta.env.VITE_TRUORA_API_KEY || "",
+    },
+    body: formData.toString(),
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = errorText;
-      }
-
-      // 3. Imprimimos el detalle en la consola del navegador
-      console.group("❌ Error detallado de la API");
-      console.error("Status:", response.status);
-      console.error("Respuesta del servidor:", errorData);
-      // Convertimos formData a objeto solo para verlo fácil en consola
-      console.error("Datos enviados:", Object.fromEntries(formData.entries()));
-      console.groupEnd();
-
-      throw new Error(`Fallo en la API (Status: ${response.status})`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = errorText;
     }
 
-    const data = await response.json();
-    token.value = data.api_key;
-  } catch (error) {
-    console.error("🚨 Error capturado:", error);
+    console.group("❌ Error detallado de la API");
+    console.error("Status:", response.status);
+    console.error("Respuesta del servidor:", errorData);
+    console.error("Datos enviados:", Object.fromEntries(formData.entries()));
+    console.groupEnd();
+
+    throw new Error(`Fallo en la API (Status: ${response.status})`);
   }
+
+  const data = await response.json();
+  token.value = data.api_key;
 };
 
 onMounted(() => {
-  getApiKey();
   window.addEventListener("message", handleMessage);
 });
 
@@ -103,19 +163,25 @@ onUnmounted(() => {
 
 <template>
   <div class="landing-page">
-    <section class="hero-section">
-      <h1 class="hero-title">
-        Tu Futuro Financiero,<br /><span class="title-secondary"
-          >Comienza Aquí</span
-        >
-      </h1>
-      <p class="hero-subtitle">
-        Diseñamos un sistema de ahorro programado que se adapta a tu ritmo de
-        vida,<br />automatizado vía WhatsApp para tu tranquilidad.
-      </p>
-    </section>
-
     <section class="main-container">
+      <section class="hero-section">
+        <h1 class="hero-title">
+          Tu Futuro Financiero,<br /><span class="title-secondary"
+            >Comienza Aquí</span
+          >
+        </h1>
+        <p class="hero-subtitle">
+          Diseñamos un sistema de ahorro programado que se adapta a tu ritmo de
+          vida,<br />automatizado vía WhatsApp para tu tranquilidad.
+        </p>
+        <RegistrationForm
+          v-model:phone="phone"
+          :pending-token="pendingToken"
+          @validated="onRegistrationValidated"
+          @account-exists="onRegistrationAccountExists"
+        />
+      </section>
+
       <div class="iframe-placeholder">
         <template v-if="truoraStatus === 'success'">
           <div class="success-message-box">
@@ -124,8 +190,17 @@ onUnmounted(() => {
             <p>Le llegará un mensaje al WhatsApp para empezar el ahorro.</p>
           </div>
         </template>
+        <div v-else-if="truoraStatus === 'idle'" class="step-placeholder">
+          Paso 2
+        </div>
+        <div
+          v-else-if="truoraStatus === 'processing' && !token"
+          class="step-placeholder"
+        >
+          Cargando validación...
+        </div>
         <iframe
-          v-else-if="token"
+          v-else-if="truoraStatus === 'processing' && token"
           :src="`https://identity.truora.com/?token=${token}`"
           allow="camera"
           width="450"
@@ -259,6 +334,15 @@ onUnmounted(() => {
   font-size: 1rem;
   color: #6b8b7f;
   line-height: 1.6;
+}
+
+.step-placeholder {
+  font-size: 1.5rem;
+  color: #6b8b7f;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 2rem;
 }
 
 .placeholder-text {
