@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
-import PhoneForm from "./components/PhoneForm.vue";
-import IframeStep from "./components/IframeStep.vue";
 
-const step = ref<"phone" | "iframe">("iframe");
 const token = ref("");
 
-const iframeUrl = computed(() =>
-  token.value ? `https://identity.truora.com/?token=${token.value}` : "",
-);
+const handleMessage = (event: MessageEvent) => {
+  const data = event.data;
+  const message = typeof data === "string" ? data : data?.type ?? data?.message ?? JSON.stringify(data);
 
-const onPhoneSubmit = () => {
-  step.value = "iframe";
+  // Logear TODO lo que llegue para ver el formato real de Truora
+  console.log("[postMessage] event.data:", data, "| tipo:", typeof data);
+
+  // Eventos documentados por Truora:
+  if (message === "truora.process.succeeded") {
+    console.log("✅ truora.process.succeeded → Estado final de éxito");
+  }
+  if (message === "truora.process.failed") {
+    console.log("❌ truora.process.failed → Estado final de fallo");
+  }
+  if (message === "truora.steps.completed") {
+    console.log("⏳ truora.steps.completed → Pasos completados, esperando resultado");
+  }
 };
 
 const getApiKey = async () => {
@@ -66,6 +74,11 @@ const getApiKey = async () => {
 
 onMounted(() => {
   getApiKey();
+  window.addEventListener("message", handleMessage);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("message", handleMessage);
 });
 </script>
 
@@ -84,11 +97,14 @@ onMounted(() => {
     </section>
 
     <section class="main-container">
-      <div class="flow-container">
-        <transition name="fade" mode="out-in">
-          <PhoneForm v-if="step === 'phone'" @submit="onPhoneSubmit" />
-          <IframeStep v-else-if="step === 'iframe'" :iframe-url="iframeUrl" />
-        </transition>
+      <div class="iframe-placeholder">
+        <iframe
+          v-if="token"
+          :src="`https://identity.truora.com/?token=${token}`"
+          allow="camera"
+          width="450"
+          height="700"
+        />
       </div>
     </section>
 
@@ -161,8 +177,8 @@ onMounted(() => {
   width: 100%;
 }
 
-.flow-container {
-  width: 400px;
+.iframe-placeholder {
+  width: 500px;
   height: 750px;
   background: rgba(255, 255, 255, 0.8);
   border: 2px solid rgba(46, 125, 50, 0.1);
@@ -172,17 +188,6 @@ onMounted(() => {
   justify-content: center;
   box-shadow: 0 8px 32px rgba(26, 58, 46, 0.08);
   backdrop-filter: blur(10px);
-  overflow: auto;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 .placeholder-text {
@@ -247,9 +252,9 @@ onMounted(() => {
     text-align: center;
   }
 
-  .flow-container {
+  .iframe-placeholder {
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     height: 50vh;
     min-height: 500px;
   }
