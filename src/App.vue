@@ -2,6 +2,10 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
 import RegistrationForm from "./components/RegistrationForm.vue";
+import {
+  sendWhatsappOutbound,
+  splitFullPhoneForOutbound,
+} from "./lib/whatsappOutbound";
 
 const token = ref("");
 const truoraStatus = ref<"idle" | "processing" | "success" | "failed">("idle");
@@ -60,6 +64,12 @@ const postUserToSupabase = async () => {
   }
 };
 
+
+
+
+
+
+
 const showPopup = (message: string) => {
   popupMessage.value = message;
   popupVisible.value = true;
@@ -83,12 +93,17 @@ const handleMessage = (event: MessageEvent) => {
 
   if (message === "truora.process.succeeded") {
     void postUserToSupabase()
-      .then(() => {
+      .then(async () => {
+        const { country_code, phone_number } = splitFullPhoneForOutbound(
+          savedFullPhone.value,
+        );
+        await sendWhatsappOutbound({ country_code, phone_number });
         truoraStatus.value = "success";
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         showPopup(
-          "La validación fue correcta pero no se pudo guardar el registro. Contacta soporte.",
+          "La validación fue correcta pero hubo un error al guardar el registro o al enviar WhatsApp. Revisa la consola o contacta soporte.",
         );
       });
   }
@@ -191,7 +206,18 @@ onUnmounted(() => {
           </div>
         </template>
         <div v-else-if="truoraStatus === 'idle'" class="step-placeholder">
-          Paso 2
+          <div class="step-placeholder-inner">
+            <span class="step-badge">Paso 1 · Registro</span>
+            <h3 class="step-placeholder-title">
+              Completa el formulario con tu número de teléfono y tu contraseña
+              para crear tu cuenta.
+            </h3>
+
+            <p class="step-placeholder-hint">
+              Cuando termines, podrás continuar con el siguiente paso: la
+              validación de identidad en este recuadro.
+            </p>
+          </div>
         </div>
         <div
           v-else-if="truoraStatus === 'processing' && !token"
@@ -201,6 +227,7 @@ onUnmounted(() => {
         </div>
         <iframe
           v-else-if="truoraStatus === 'processing' && token"
+          class="truora-iframe"
           :src="`https://identity.truora.com/?token=${token}`"
           allow="camera"
           width="450"
@@ -247,6 +274,8 @@ onUnmounted(() => {
 }
 
 .hero-section {
+  flex: 1 1 320px;
+  min-width: 0;
   padding: 4rem 2rem 2rem;
   text-align: center;
   max-width: 900px;
@@ -283,16 +312,21 @@ onUnmounted(() => {
   flex: 1;
   padding: 2rem;
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
+  gap: 2.5rem;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .iframe-placeholder {
-  width: 500px;
-  height: 750px;
+  flex: 0 1 auto;
+  width: 450px;
+  height: 700px;
   background: rgba(255, 255, 255, 0.8);
   border: 2px solid rgba(46, 125, 50, 0.1);
   border-radius: 24px;
@@ -337,12 +371,59 @@ onUnmounted(() => {
 }
 
 .step-placeholder {
-  font-size: 1.5rem;
-  color: #6b8b7f;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  width: 100%;
+  padding: 1.25rem 1rem;
+  box-sizing: border-box;
+}
+
+.step-placeholder-inner {
+  max-width: 26rem;
+  margin: 0 auto;
   text-align: center;
-  padding: 2rem;
+}
+
+.step-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #2e7d32;
+  background: rgba(76, 175, 80, 0.12);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.step-placeholder-title {
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #2d3436;
+  margin: 0 0 0.75rem;
+  font-family: "Georgia", "Garamond", serif;
+  line-height: 1.3;
+}
+
+.step-placeholder-lead,
+.step-placeholder-hint {
+  font-size: 0.95rem;
+  color: #6b8b7f;
+  line-height: 1.65;
+  margin: 0 0 0.75rem;
+  font-weight: 400;
+}
+
+.step-placeholder-hint {
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  opacity: 0.95;
+}
+
+.truora-iframe {
+  max-width: 100%;
+  border: none;
+  border-radius: 12px;
+  display: block;
 }
 
 .placeholder-text {
@@ -390,12 +471,44 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+    align-items: center;
+    padding: 1.25rem 1rem 2rem;
+    gap: 1.75rem;
+  }
+
+  .hero-section {
+    order: 1;
+    width: 100%;
+    padding: 2rem 0.5rem 0;
+  }
+
+  .iframe-placeholder {
+    order: 2;
+    width: 100%;
+    max-width: 450px;
+    height: auto;
+    min-height: 280px;
+    max-height: min(70vh, 520px);
+  }
+
+  .truora-iframe {
+    width: 100% !important;
+    height: min(65vh, 420px) !important;
+    max-height: 420px;
+  }
+
   .hero-title {
     font-size: 2.25rem;
   }
 
   .hero-subtitle {
     font-size: 1rem;
+  }
+
+  .hero-subtitle br {
+    display: none;
   }
 
   .savings-content {
@@ -407,11 +520,8 @@ onUnmounted(() => {
     text-align: center;
   }
 
-  .iframe-placeholder {
-    width: 100%;
-    max-width: 450px;
-    height: 50vh;
-    min-height: 500px;
+  .step-placeholder-title {
+    font-size: 1.2rem;
   }
 
   .placeholder-text {

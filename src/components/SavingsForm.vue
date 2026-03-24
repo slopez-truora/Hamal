@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { sendWhatsappOutbound } from '../lib/whatsappOutbound'
 
 
 const countryCode = ref('+57')
@@ -29,45 +30,10 @@ const handleSubmit = async () => {
   errorMessage.value = ''
 
   try {
-    // 1. Preparamos los datos con URLSearchParams para x-www-form-urlencoded
-    const formData = new URLSearchParams()
-    formData.append('outbound_id', import.meta.env.VITE_OUTBOUND_ID || '')
-    formData.append('country_code', countryCode.value)
-    formData.append('phone_number', phoneNumber.value)
-    formData.append('flow_id', import.meta.env.VITE_FLOW_ID || '')
-    formData.append('user_authorized', 'true')
-
-    const response = await fetch(import.meta.env.VITE_API_URL || '', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Truora-API-Key': import.meta.env.VITE_TRUORA_API_KEY || '',
-      },
-      body: formData.toString(),
+    await sendWhatsappOutbound({
+      country_code: countryCode.value,
+      phone_number: phoneNumber.value,
     })
-
-    if (!response.ok) {
-      // 2. Extraemos la respuesta exacta del servidor (texto o JSON)
-      const errorText = await response.text()
-      let errorData
-      try {
-        errorData = JSON.parse(errorText)
-      } catch {
-        errorData = errorText
-      }
-
-      // 3. Imprimimos el detalle en la consola del navegador
-      console.group('❌ Error detallado de la API')
-      console.error('Status:', response.status)
-      console.error('Respuesta del servidor:', errorData)
-      // Convertimos formData a objeto solo para verlo fácil en consola
-      console.error('Datos enviados:', Object.fromEntries(formData.entries()))
-      console.groupEnd()
-
-      throw new Error(`Fallo en la API (Status: ${response.status})`)
-    }
-
-    await response.json()
     success.value = true
     phoneNumber.value = ''
 
