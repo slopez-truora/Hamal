@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
 import RegistrationForm from "./components/RegistrationForm.vue";
+import FeaturesWhySection from "./components/FeaturesWhySection.vue";
 import {
   sendWhatsappOutbound,
   splitFullPhoneForOutbound,
@@ -238,6 +239,8 @@ onUnmounted(() => {
         </div>
       </Transition>
     </Teleport>
+
+    <FeaturesWhySection />
 
     <section class="savings-section">
       <div class="savings-content">
