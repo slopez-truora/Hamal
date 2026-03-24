@@ -3,23 +3,42 @@ import { onMounted, onUnmounted, ref } from "vue";
 import SavingsForm from "./components/SavingsForm.vue";
 
 const token = ref("");
+const truoraStatus = ref<"idle" | "processing" | "success" | "failed">("idle");
+const popupVisible = ref(false);
+const popupMessage = ref("");
+
+const showPopup = (message: string) => {
+  popupMessage.value = message;
+  popupVisible.value = true;
+  setTimeout(() => {
+    popupVisible.value = false;
+  }, 4000);
+};
+
+const closePopup = () => {
+  popupVisible.value = false;
+};
 
 const handleMessage = (event: MessageEvent) => {
   const data = event.data;
-  const message = typeof data === "string" ? data : data?.type ?? data?.message ?? JSON.stringify(data);
+  const message =
+    typeof data === "string"
+      ? data
+      : (data?.type ?? data?.message ?? JSON.stringify(data));
 
-  // Logear TODO lo que llegue para ver el formato real de Truora
   console.log("[postMessage] event.data:", data, "| tipo:", typeof data);
 
-  // Eventos documentados por Truora:
   if (message === "truora.process.succeeded") {
-    console.log("✅ truora.process.succeeded → Estado final de éxito");
+    truoraStatus.value = "success";
   }
   if (message === "truora.process.failed") {
-    console.log("❌ truora.process.failed → Estado final de fallo");
+    truoraStatus.value = "failed";
+    showPopup("No se pudo completar la validación. Intenta nuevamente.");
   }
   if (message === "truora.steps.completed") {
-    console.log("⏳ truora.steps.completed → Pasos completados, esperando resultado");
+    showPopup(
+      "Pasos completados. Esperando resultado final de la validación...",
+    );
   }
 };
 
@@ -98,8 +117,15 @@ onUnmounted(() => {
 
     <section class="main-container">
       <div class="iframe-placeholder">
+        <template v-if="truoraStatus === 'success'">
+          <div class="success-message-box">
+            <span class="success-icon">✓</span>
+            <h3>Se registró su cuenta correctamente</h3>
+            <p>Le llegará un mensaje al WhatsApp para empezar el ahorro.</p>
+          </div>
+        </template>
         <iframe
-          v-if="token"
+          v-else-if="token"
           :src="`https://identity.truora.com/?token=${token}`"
           allow="camera"
           width="450"
@@ -107,6 +133,18 @@ onUnmounted(() => {
         />
       </div>
     </section>
+
+    <!-- Ventanita emergente informativa -->
+    <Teleport to="body">
+      <Transition name="popup">
+        <div v-if="popupVisible" class="popup-overlay" @click.self="closePopup">
+          <div class="popup-box">
+            <p>{{ popupMessage }}</p>
+            <button class="popup-close" @click="closePopup">Cerrar</button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <section class="savings-section">
       <div class="savings-content">
@@ -190,6 +228,39 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
 }
 
+.success-message-box {
+  text-align: center;
+  padding: 2rem;
+  max-width: 380px;
+}
+
+.success-message-box .success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+}
+
+.success-message-box h3 {
+  font-size: 1.5rem;
+  color: #2d3436;
+  margin-bottom: 0.75rem;
+  font-family: "Georgia", "Garamond", serif;
+}
+
+.success-message-box p {
+  font-size: 1rem;
+  color: #6b8b7f;
+  line-height: 1.6;
+}
+
 .placeholder-text {
   font-size: 1.5rem;
   color: #7ba898;
@@ -264,5 +335,60 @@ onUnmounted(() => {
     padding: 2rem;
     text-align: center;
   }
+}
+</style>
+
+<style>
+/* Popup global (Teleport a body) */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.popup-box {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  text-align: center;
+}
+
+.popup-box p {
+  font-size: 1rem;
+  color: #2d3436;
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.popup-close {
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.popup-close:hover {
+  opacity: 0.9;
+}
+
+.popup-enter-active,
+.popup-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.popup-enter-from,
+.popup-leave-to {
+  opacity: 0;
 }
 </style>
