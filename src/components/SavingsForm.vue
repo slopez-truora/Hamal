@@ -37,7 +37,7 @@ const handleSubmit = async () => {
     phoneNumber.value = "";
   } catch (error) {
     errorMessage.value =
-      "Hubo un error, lo sentimos. Revisa que sea un telefono valido y vuelve a intentar.";
+      "Hubo un error, lo sentimos. Revisa que sea un telefono valido o que no exita un flujo iniciado y vuelve a intentar.";
     console.error("🚨 Error capturado:", error);
   } finally {
     loading.value = false;
