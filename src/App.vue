@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import SavingsForm from "./components/SavingsForm.vue";
 import RegistrationForm from "./components/RegistrationForm.vue";
 import {
   sendWhatsappOutbound,
