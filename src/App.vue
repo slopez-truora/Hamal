@@ -64,12 +64,6 @@ const postUserToSupabase = async () => {
   }
 };
 
-
-
-
-
-
-
 const showPopup = (message: string) => {
   popupMessage.value = message;
   popupVisible.value = true;
@@ -129,10 +123,7 @@ const getApiKey = async (fullPhone: string) => {
   formData.append("country", "ALL");
   formData.append("grant", "digital-identity");
   formData.append("redirect_url", "https://hamal-rvx2.onrender.com/");
-  formData.append(
-    "flow_id",
-    import.meta.env.VITE_FLOW_ID || "IPFfd125057a738611c514d6480fdde52c7",
-  );
+  formData.append("flow_id", "IPFf546d1193a10b3e22999f3e5d61e18d4");
   formData.append("account_id", phoneWithoutPlus);
   formData.append("phone", phoneWithoutPlus);
 
@@ -253,9 +244,9 @@ onUnmounted(() => {
         <div class="savings-info">
           <h2 class="section-title">Comienza tu Ahorro</h2>
           <p class="section-description">
-            Al ingresar tu número de WhatsApp podrás iniciar sesión en nuestro
-            flujo automatizado y realizar tu pago para el ahorro programado de
-            manera rápida y segura.
+            Si ya estas registrado, Al ingresar tu número de WhatsApp podrás
+            iniciar sesión en nuestro flujo automatizado y realizar tu pago para
+            el ahorro programado de manera rápida y segura.
           </p>
         </div>
 
