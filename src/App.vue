@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
+import SavingsForm from "./components/SavingsForm.vue";
 import RegistrationForm from "./components/RegistrationForm.vue";
 import {
   sendWhatsappOutbound,
@@ -237,15 +238,34 @@ onUnmounted(() => {
         </div>
       </Transition>
     </Teleport>
+
+    <section class="savings-section">
+      <div class="savings-content">
+        <div class="savings-info">
+          <h2 class="section-title">Comienza tu Ahorro</h2>
+          <p class="section-description">
+            Si ya estás registrado, al ingresar tu número de WhatsApp podrás
+            iniciar sesión en nuestro flujo automatizado y realizar tu pago para
+            el ahorro programado de manera rápida y segura.
+          </p>
+        </div>
+
+        <SavingsForm />
+      </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .landing-page {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+  box-sizing: border-box;
 }
 
 .hero-section {
@@ -409,40 +429,73 @@ onUnmounted(() => {
 }
 
 .savings-section {
-  padding: 3rem 2rem 4rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: clamp(2rem, 5vw, 3rem) clamp(0.75rem, 4vw, 2rem) clamp(2.5rem, 6vw, 4rem);
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
+  overflow-x: clip;
 }
 
 .savings-content {
-  max-width: 900px;
+  width: 100%;
+  max-width: min(56rem, 100%);
   margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.savings-content > * {
+  min-width: 0;
 }
 
 .savings-info {
   text-align: left;
+  min-width: 0;
 }
 
 .section-title {
-  font-size: 2.125rem;
+  font-size: clamp(1.35rem, 4vw, 2.125rem);
   font-weight: 400;
   color: #2d3436;
-  margin-bottom: 1.25rem;
-  line-height: 1.3;
+  margin-bottom: 1rem;
+  line-height: 1.25;
   font-family: "Georgia", "Garamond", serif;
   letter-spacing: -0.01em;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .section-description {
-  font-size: 1.05rem;
+  font-size: clamp(0.9rem, 2.4vw, 1.05rem);
   color: #6b8b7f;
-  line-height: 1.8;
+  line-height: 1.65;
   font-weight: 300;
   letter-spacing: 0.005em;
+  margin: 0;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+@media (max-width: 960px) {
+  .savings-content {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .savings-info {
+    text-align: center;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
 
 @media (max-width: 768px) {
@@ -486,13 +539,9 @@ onUnmounted(() => {
     display: none;
   }
 
-  .savings-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .savings-info {
-    text-align: center;
+  .savings-section {
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
   }
 
   .step-placeholder-title {

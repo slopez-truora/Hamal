@@ -1,49 +1,48 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { sendWhatsappOutbound } from '../lib/whatsappOutbound'
+import { ref } from "vue";
+import { sendWhatsappOutbound } from "../lib/whatsappOutbound";
 
-
-const countryCode = ref('+57')
-const phoneNumber = ref('')
-const loading = ref(false)
-const success = ref(false)
-const errorMessage = ref('')
+const countryCode = ref("+57");
+const phoneNumber = ref("");
+const loading = ref(false);
+const success = ref(false);
+const errorMessage = ref("");
 
 const countryCodes = [
-  { code: '+1', name: 'USA/Canadá' },
-  { code: '+52', name: 'México' },
-  { code: '+34', name: 'España' },
-  { code: '+54', name: 'Argentina' },
-  { code: '+56', name: 'Chile' },
-  { code: '+57', name: 'Colombia' },
-  { code: '+51', name: 'Perú' },
-]
+  { code: "+1", name: "USA/Canadá" },
+  { code: "+52", name: "México" },
+  { code: "+34", name: "España" },
+  { code: "+54", name: "Argentina" },
+  { code: "+56", name: "Chile" },
+  { code: "+57", name: "Colombia" },
+  { code: "+51", name: "Perú" },
+];
 
 const handleSubmit = async () => {
   if (!phoneNumber.value.trim()) {
-    errorMessage.value = 'Por favor ingresa tu número de WhatsApp'
-    return
+    errorMessage.value = "Por favor ingresa tu número de WhatsApp";
+    return;
   }
 
-  loading.value = true
-  success.value = false
-  errorMessage.value = ''
+  loading.value = true;
+  success.value = false;
+  errorMessage.value = "";
 
   try {
     await sendWhatsappOutbound({
       country_code: countryCode.value,
       phone_number: phoneNumber.value,
-    })
-    success.value = true
-    phoneNumber.value = ''
-
+    });
+    success.value = true;
+    phoneNumber.value = "";
   } catch (error) {
-    errorMessage.value = 'Hubo un error. Revisa la consola de tu navegador para ver el detalle.'
-    console.error('🚨 Error capturado:', error)
+    errorMessage.value =
+      "Hubo un error, lo sentimos. Revisa que sea un telefono valido y vuelve a intentar.";
+    console.error("🚨 Error capturado:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <template>
@@ -56,7 +55,11 @@ const handleSubmit = async () => {
           class="country-code-select"
           :disabled="loading"
         >
-          <option v-for="country in countryCodes" :key="country.code" :value="country.code">
+          <option
+            v-for="country in countryCodes"
+            :key="country.code"
+            :value="country.code"
+          >
             {{ country.code }}
           </option>
         </select>
@@ -75,7 +78,7 @@ const handleSubmit = async () => {
         type="submit"
         class="submit-button"
         :disabled="loading || !phoneNumber.trim()"
-        :class="{ 'loading': loading, 'success': success }"
+        :class="{ loading: loading, success: success }"
       >
         <span v-if="loading">Procesando...</span>
         <span v-else-if="success">¡Enviado con éxito!</span>
@@ -98,14 +101,21 @@ const handleSubmit = async () => {
 </template>
 
 <style scoped>
+/* Misma lógica que RegistrationForm: contenedor acotado al ancho útil, sin overflow horizontal */
 .savings-form-container {
   width: 100%;
-  max-width: 450px;
+  max-width: min(420px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
 
 .savings-form {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.95);
-  padding: 2.5rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(26, 58, 46, 0.1);
   backdrop-filter: blur(10px);
@@ -117,12 +127,15 @@ const handleSubmit = async () => {
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   align-items: stretch;
+  min-width: 0;
+  width: 100%;
 }
 
 .country-code-select {
   flex: 0 0 auto;
   width: 90px;
-  padding: 0.875rem 0.5rem;
+  min-width: 72px;
+  padding: 0.75rem 0.5rem;
   font-size: 0.95rem;
   border: 2px solid rgba(46, 125, 50, 0.15);
   border-radius: 12px;
@@ -151,8 +164,9 @@ const handleSubmit = async () => {
 }
 
 .phone-input {
-  flex: 1;
-  padding: 0.875rem 1.125rem;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.75rem 0.875rem;
   font-size: 1rem;
   border: 2px solid rgba(46, 125, 50, 0.15);
   border-radius: 12px;
