@@ -189,7 +189,13 @@ onUnmounted(() => {
         />
       </section>
 
-      <div class="iframe-placeholder">
+      <div
+        class="iframe-placeholder"
+        :class="{
+          'iframe-placeholder--truora-active':
+            truoraStatus === 'processing' && token,
+        }"
+      >
         <template v-if="truoraStatus === 'success'">
           <div class="success-message-box">
             <span class="success-icon">✓</span>
@@ -435,7 +441,8 @@ onUnmounted(() => {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  padding: clamp(2rem, 5vw, 3rem) clamp(0.75rem, 4vw, 2rem) clamp(2.5rem, 6vw, 4rem);
+  padding: clamp(2rem, 5vw, 3rem) clamp(0.75rem, 4vw, 2rem)
+    clamp(2.5rem, 6vw, 4rem);
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   overflow-x: clip;
@@ -524,10 +531,16 @@ onUnmounted(() => {
     max-height: min(70vh, 520px);
   }
 
-  .truora-iframe {
+  .iframe-placeholder--truora-active {
+    height: 700px;
+    min-height: 700px;
+    max-height: 700px;
+  }
+
+  .iframe-placeholder--truora-active .truora-iframe {
     width: 100% !important;
-    height: min(65vh, 420px) !important;
-    max-height: 420px;
+    height: 700px !important;
+    max-height: 700px;
   }
 
   .hero-title {
